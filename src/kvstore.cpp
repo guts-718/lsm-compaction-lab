@@ -1,4 +1,5 @@
 #include "kvstore.h"
+#include "sstable.h"
 
 KVStore::KVStore(const std::string& wal_path):wal_(wal_path),next_seq_(1){
 
@@ -56,8 +57,11 @@ bool KVStore::get(const std::string& key, std::string& value_out) {
     }
     // sstable
     for (auto it = l0_tables_.rbegin(); it != l0_tables_.rend(); ++it) {
+        if (!it->may_contain(key)) continue;
         if (it->get(key, value_out)) return true;
     }
+
+
 
     return false;
 }

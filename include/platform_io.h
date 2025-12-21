@@ -8,3 +8,4 @@ void write_file(int fd, const char* data, size_t size);
 size_t read_file(int fd, char* data, size_t size);
 void fsync_file(int fd);
 void close_file(int fd);
+void seek_file(int fd, uint64_t offset);

@@ -34,10 +34,15 @@ void close_file(int fd){
     _close(fd);
 }
 
+void seek_file(int fd, uint64_t offset) {
+    _lseeki64(fd, offset, SEEK_SET);
+}
+
 #else 
 #include<unistd.h>
 #include<fcntl.h>
 #include<sys/stat.h>
+#include <unistd.h>
 
 int open_file_append(const std::string& path){
     return open(path.c_str(), O_CREAT | O_RDWR | O_APPEND, 0644);
@@ -61,5 +66,9 @@ void fsync_file(int fd){
 
 void close_file(int fd){
     ::close(fd);
+}
+
+void seek_file(int fd, uint64_t offset) {
+    lseek(fd, offset, SEEK_SET);
 }
 #endif
