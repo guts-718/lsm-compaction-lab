@@ -32,10 +32,12 @@ void WriteAheadLog::append(const LogRecord& record){
     std::vector<char>payload;
 
     uint8_t type = static_cast<uint8_t>(record.type);
+    uint64_t seq = record.seq;
     uint32_t key_len=static_cast<uint32_t>(record.key.size());
     uint32_t value_len=static_cast<uint32_t>(record.value.size());
 
     payload.insert(payload.end(), reinterpret_cast<char*>(&type), reinterpret_cast<char*>(&type)+sizeof(type));
+    payload.insert(payload.end(), reinterpret_cast<char*>(&seq),reinterpret_cast<char*>(&seq) + sizeof(seq));
     payload.insert(payload.end(),reinterpret_cast<char*>(&key_len), reinterpret_cast<char*>(&key_len)+sizeof(key_len));
     payload.insert(payload.end(),reinterpret_cast<char*>(&value_len),reinterpret_cast<char*>(&value_len)+sizeof(value_len));
     payload.insert(payload.end(), record.key.begin(),record.key.end());
@@ -73,8 +75,13 @@ std::vector<LogRecord> WriteAheadLog::replay(){
         if(actual_crc!=crc)break;
 
         size_t offset=0;
+
         uint8_t type=payload[offset];
         offset+=sizeof(uint8_t);
+
+        uint64_t seq;
+        std::memcpy(&seq, payload.data() + offset, sizeof(seq));
+        offset += sizeof(seq);
 
         uint32_t key_len;
         std::memcpy(&key_len, &payload[offset], sizeof(key_len));
@@ -91,6 +98,7 @@ std::vector<LogRecord> WriteAheadLog::replay(){
 
         records.push_back({
             static_cast<RecordType>(type),
+            seq,
             key,
             value
         });

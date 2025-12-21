@@ -1,5 +1,8 @@
+/*
 #include "wal.h"
 #include<iostream>
+
+
 
 int main(){
     WriteAheadLog wal("test.wal");
@@ -17,4 +20,26 @@ int main(){
     auto records=wal.replay();
     std::cout<<"Replayed records: "<<records.size()<<"\n";
     std::cout<<"WAL bytes written "<<wal.bytes_written()<<"\n";
+}
+
+*/
+#include "kvstore.h"
+#include<iostream>
+
+int main(){
+    KVStore store("test.wal");
+    store.put("r","1");
+    store.put("a","2");
+    store.put("h","3");
+
+    std::string v;
+    if(store.get("a",v)){
+        std::cout<<"a = "<<v<<"\n";
+    }
+
+    store.del("a");
+
+    if(!store.get("a",v)){
+        std::cout<<"a got deleted \n";
+    }
 }
