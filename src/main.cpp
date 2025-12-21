@@ -28,18 +28,12 @@ int main(){
 
 int main(){
     KVStore store("test.wal");
-    store.put("r","1");
-    store.put("a","2");
-    store.put("h","3");
-
+   
+    for (int i = 0; i < 3000; i++) {
+        store.put("k" + std::to_string(i), "v" + std::to_string(i));
+    }
+    
+    store.flush_immutables();
     std::string v;
-    if(store.get("a",v)){
-        std::cout<<"a = "<<v<<"\n";
-    }
-
-    store.del("a");
-
-    if(!store.get("a",v)){
-        std::cout<<"a got deleted \n";
-    }
+    std::cout << store.get("k42", v) << " " << v << "\n";
 }

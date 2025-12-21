@@ -18,7 +18,6 @@ class MemTable {
         bool get(const std::string &key, std::string& value_out) const;
 
         size_t size() const;
-
-    private:
+        // the map should be private....
         std::map<std::string, MemEntry> table_;
 };

@@ -27,6 +27,11 @@ void KVStore::put(const std::string &key, const std::string& value){
     wal_.append(r);
     memtable_.put(key,value,next_seq_);
     next_seq_++;
+
+    if(memtable_.size() >= memtable_limit_){
+        immutables_.push_back(memtable_);
+        memtable_=MemTable{};
+    }
 }
 
 void KVStore::del(const std::string& key){
@@ -41,7 +46,32 @@ void KVStore::del(const std::string& key){
     next_seq_++;
 }
 
+// immutable is in memory, readable, not accepting writes and waiting to be flushed to an sstable
+bool KVStore::get(const std::string& key, std::string& value_out) {
+    // from active memtable
+    if (memtable_.get(key, value_out)) return true;
+    // from immutable memtables (recently frozen but not yet flushed)
+    for (auto it = immutables_.rbegin(); it != immutables_.rend(); ++it) {
+        if (it->get(key, value_out)) return true;
+    }
+    // sstable
+    for (auto it = l0_tables_.rbegin(); it != l0_tables_.rend(); ++it) {
+        if (it->get(key, value_out)) return true;
+    }
 
-bool KVStore::get(const std::string& key, std::string& value_out){
-    return memtable_.get(key,value_out);
+    return false;
 }
+
+
+
+void KVStore::flush_immutables(){
+    for(auto &mt: immutables_){
+        auto sst = SSTable::create_from_memtable(
+            "sst_l0_" + std::to_string(l0_tables_.size())+ ".db",mt
+        );
+        l0_tables_.push_back(sst);
+    }
+    immutables_.clear();
+}
+
+
