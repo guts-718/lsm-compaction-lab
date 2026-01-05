@@ -10,6 +10,14 @@ class KVStore {
         void del(const std::string &key);
         bool get(const std::string &key, std::string& value_out);
         void flush_immutables();
+        void compact_l0_to_l1();
+
+        std::vector<SSTable>l0_tables_; // for debugging purpose made it public
+        // const std::vector<SSTable>& KVStore::l0_tables() const {
+        //     return l0_tables_;
+        // }
+
+
         
 
     private:
@@ -17,7 +25,13 @@ class KVStore {
         MemTable memtable_;
         SequenceNumber next_seq_;
         std::vector<MemTable>immutables_;
-        std::vector<SSTable>l0_tables_;
-        size_t memtable_limit_=1000;
+        //std::vector<SSTable>l0_tables_;
+        size_t memtable_limit_=3;
+        size_t l0_compaction_threshold_ = 4;
+        std::vector<SSTable> l1_tables_;
+        uint64_t next_sstable_id_ = 0;
+
+
+
     
 };

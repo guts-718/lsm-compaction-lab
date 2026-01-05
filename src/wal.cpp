@@ -16,7 +16,7 @@ static uint32_t compute_crc(const char* data, size_t len){
 
 
 
-WriteAheadLog::WriteAheadLog(const std::string& filename): filename_(filename),bytes_written_(0){
+WriteAheadLog:: WriteAheadLog(const std::string& filename): filename_(filename),bytes_written_(0){
     fd_ = open_file_append(filename_);
     if(fd_ <0){
         throw std::runtime_error("Failed to open write ahead log");
@@ -27,7 +27,7 @@ WriteAheadLog:: ~WriteAheadLog(){
     close_file(fd_);
 }
 
-
+// payload =  type | seq | key_len | val_len | key | val
 void WriteAheadLog::append(const LogRecord& record){
     std::vector<char>payload;
 
@@ -43,7 +43,7 @@ void WriteAheadLog::append(const LogRecord& record){
     payload.insert(payload.end(), record.key.begin(),record.key.end());
     payload.insert(payload.end(),record.value.begin(),record.value.end());
 
-    uint32_t record_size= static_cast<uint32_t>(payload.size());
+    uint32_t record_size = static_cast<uint32_t>(payload.size());
     uint32_t crc = compute_crc(payload.data(),payload.size());
 
     write_file(fd_, reinterpret_cast<char*>(&crc),sizeof(crc));
@@ -55,7 +55,8 @@ void WriteAheadLog::append(const LogRecord& record){
     bytes_written_+=sizeof(crc)+sizeof(record_size)+payload.size();
 
 }
-
+// we are writing it like - crc | record_size | payload
+// payload =  type | seq | key_len | val_len | key | val
 
 std::vector<LogRecord> WriteAheadLog::replay(){
     std::vector<LogRecord> records;
@@ -76,7 +77,7 @@ std::vector<LogRecord> WriteAheadLog::replay(){
 
         size_t offset=0;
 
-        uint8_t type=payload[offset];
+        uint8_t type=payload[offset]; // reads exactly one byte/ one char
         offset+=sizeof(uint8_t);
 
         uint64_t seq;
@@ -96,13 +97,14 @@ std::vector<LogRecord> WriteAheadLog::replay(){
 
         std::string value(payload.data()+offset, value_len);
 
+        // pushing in the memtable (after restart or something)
         records.push_back({
             static_cast<RecordType>(type),
             seq,
             key,
             value
         });
-
+        
         
     }
     close_file(fd);

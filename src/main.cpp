@@ -25,15 +25,46 @@ int main(){
 */
 #include "kvstore.h"
 #include<iostream>
+#include <cassert>
+void dump_sstable(const SSTable& sst, const std::string& name) {
+    std::cout << "==== SSTable: " << name << " ====\n";
+    auto entries = sst.read_all();
 
-int main(){
-    KVStore store("test.wal");
-   
-    for (int i = 0; i < 3000; i++) {
-        store.put("k" + std::to_string(i), "v" + std::to_string(i));
+    for (const auto& e : entries) {
+        std::cout
+            << "key=" << e.key
+            << " value=" << e.value
+            << " seq=" << e.seq
+            << " tombstone=" << e.tombstone
+            << "\n";
     }
-    
+    std::cout << "============================\n";
+}
+
+int main() {
+    KVStore store("test.wal");
+
+    store.put("k1", "v1");
+    store.put("k2", "v2");
+    store.put("k3", "v3"); // triggers freeze
+    store.put("k4", "v4");
+
     store.flush_immutables();
+
+    // 🔍 DEBUG: inspect L0 SSTables
+    int idx = 0;
+    for (const auto& sst : store.l0_tables_) {
+        dump_sstable(sst, "L0_" + std::to_string(idx++));
+    }
+
     std::string v;
-    std::cout << store.get("k42", v) << " " << v << "\n";
+    if (store.get("k4", v))
+        std::cout << "GET k4 = " << v << "\n";
+    else
+        std::cout << "GET k4 FAILED\n";
+
+    if (store.get("k1", v))
+        std::cout << "GET k1 = " << v << "\n";
+    else
+        std::cout << "GET k1 FAILED\n";
 }
